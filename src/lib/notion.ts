@@ -9,6 +9,21 @@ if (!process.env.NOTION_DATABASE_ID) {
   throw new Error('Missing NOTION_DATABASE_ID');
 }
 
+// Define Notion specific types
+type NotionProperty = {
+  title?: { plain_text: string }[];
+  rich_text?: { plain_text: string }[];
+  files?: { file: { url: string } }[];
+  multi_select?: { name: string }[];
+  url?: string;
+  select?: { name: string };
+};
+
+type NotionPage = {
+  id: string;
+  properties: Record<string, NotionProperty>;
+};
+
 export const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 });
@@ -65,10 +80,10 @@ export async function getProfileData(): Promise<ProfileData> {
       },
     });
 
-    const page = response.results[0];
+    const page = response.results[0] as NotionPage;
     if (!page) throw new Error('Profile data not found for PageType: MainProfile');
 
-    const properties = (page as any).properties;
+    const properties = page.properties;
     
     // Safely access properties with fallbacks
     const name = properties.Name?.title?.[0]?.plain_text || 'Your Name';
@@ -104,56 +119,50 @@ export async function getProfileData(): Promise<ProfileData> {
       currentWork
     };
   } catch (error) {
-    console.error('Error fetching Notion data:', error);
+    console.error('Error fetching profile data:', error);
     throw error;
   }
 }
 
 export async function getExperiences(): Promise<ExperienceData[]> {
-  const response = await notion.databases.query({
-    database_id: process.env.NOTION_DATABASE_ID!,
-    filter: { 
-      property: 'PageType',
-      select: {
-        equals: 'Experience',
+  try {
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_DATABASE_ID!,
+      filter: { 
+        property: 'PageType',
+        select: {
+          equals: 'Experience',
+        },
       },
-    },
-    sorts: [
-      {
-        property: 'WorkStartDate',
-        direction: 'descending',
-      },
-    ],
-  });
+      sorts: [
+        {
+          property: 'WorkStartDate',
+          direction: 'descending',
+        },
+      ],
+    });
 
-  const experiences = response.results.map((page: any, index: number) => {
-    const properties = page.properties;
+    const experiences = response.results.map((page: NotionPage) => {
+      const properties = page.properties;
+      return {
+        id: page.id,
+        workCompany: properties.WorkCompany?.rich_text?.[0]?.plain_text || 'N/A',
+        workTitle: properties.WorkTitle?.rich_text?.[0]?.plain_text || 'N/A',
+        workStartDate: properties.WorkStartDate?.rich_text?.[0]?.plain_text || 'N/A',
+        workEndDate: properties.WorkEndDate?.rich_text?.[0]?.plain_text || null,
+        workDescription: properties.WorkDescription?.rich_text?.[0]?.plain_text || 'No description provided.',
+      };
+    });
 
-    const processedData: ExperienceData = {
-      id: page.id,
-      workCompany: properties.WorkCompany?.rich_text?.[0]?.plain_text || 'N/A',
-      workTitle: properties.WorkTitle?.rich_text?.[0]?.plain_text || 'N/A',
-      workStartDate: properties.WorkStartDate?.rich_text?.[0]?.plain_text || 'N/A',
-      workEndDate: properties.WorkEndDate?.rich_text?.[0]?.plain_text ? properties.WorkEndDate.rich_text[0].plain_text : null,
-      workDescription: properties.WorkDescription?.rich_text?.[0]?.plain_text || 'No description provided.',
-    };
-
-    return processedData;
-  });
-
-  // Sort experiences by start date (most recent first)
-  return experiences.sort((a, b) => {
-    // Handle 'N/A' cases
-    if (a.workStartDate === 'N/A') return 1;  // Move N/A to the end
-    if (b.workStartDate === 'N/A') return -1; // Move N/A to the end
-    
-    // Convert dates to timestamps for comparison
-    const dateA = new Date(a.workStartDate).getTime();
-    const dateB = new Date(b.workStartDate).getTime();
-    
-    // Sort in descending order (most recent first)
-    return dateB - dateA;
-  });
+    return experiences.sort((a, b) => {
+      if (a.workStartDate === 'N/A') return 1;
+      if (b.workStartDate === 'N/A') return -1;
+      return new Date(b.workStartDate).getTime() - new Date(a.workStartDate).getTime();
+    });
+  } catch (error) {
+    console.error('Error fetching experiences:', error);
+    throw error;
+  }
 }
 
 export async function getProjects(): Promise<ProjectData[]> {

@@ -1,4 +1,4 @@
-import { getProjects, ProjectData } from '@/lib/notion';
+import { getProjects } from '@/lib/notion';
 import ProjectCard from '@/components/ProjectCard';
 import { Metadata } from 'next';
 

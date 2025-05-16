@@ -1,6 +1,6 @@
 import { getProfileData } from '@/lib/notion';
-import Image from 'next/image';
 import ActivityCarousel from '@/components/ActivityCarousel';
+import Image from 'next/image';
 import { Metadata } from 'next';
 
 export default async function Home() {
@@ -35,12 +35,13 @@ export default async function Home() {
             <div className="w-full flex justify-center md:justify-end items-stretch order-first md:order-last">
               {profile.profileImage ? (
                 <div className="rounded-xl overflow-hidden shadow-2xl bg-primary-light/30 w-full aspect-[3/4]">
-                  <img 
+                  <Image 
                     src={profile.profileImage} 
                     alt={profile.name}
+                    width={500}
+                    height={667}
                     className="w-full h-full hover:scale-105 transition-transform duration-300"
                     style={{ 
-                      display: 'block',
                       objectFit: 'cover',
                       objectPosition: 'center top'
                     }}
@@ -70,7 +71,7 @@ export default async function Home() {
       </div>
     );
   } catch (error) {
-    // Handle error gracefully
+    console.error('Error loading profile:', error);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-red-500">Failed to load profile data</p>

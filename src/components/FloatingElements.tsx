@@ -10,17 +10,6 @@ const FloatingElements = () => {
     setIsClient(true);
   }, []);
 
-  interface ElementType {
-    shape: string;
-    size: number;
-    color: string;
-    opacity: number;
-    speed: number;
-    left: number;
-    top: number;
-    rotate: number;
-  }
-
   // Create an array of elements with different properties and shapes
   const elements = [
     // Row 1 (0% from top)
