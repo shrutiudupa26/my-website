@@ -62,7 +62,7 @@ export default async function Home() {
               className="text-2xl md:text-3xl font-heading mb-8"
               style={{ color: 'var(--color-light)', opacity: 0.85 }}
             >
-              What's keeping me busy lately?
+              What&apos;s keeping me busy lately?
             </h2>
             <ActivityCarousel activities={profile.currentWork} />
           </div>

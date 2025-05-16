@@ -1,11 +1,10 @@
 import { Client } from '@notionhq/client';
 import { BlogPost } from '@/types/blog';
-import { 
+import type { 
   PageObjectResponse,
   PartialPageObjectResponse,
   DatabaseObjectResponse,
-  PartialDatabaseObjectResponse,
-  PropertyValueObject
+  PartialDatabaseObjectResponse
 } from '@notionhq/client/build/src/api-endpoints';
 
 if (!process.env.NOTION_API_KEY) {
@@ -16,35 +15,39 @@ if (!process.env.NOTION_DATABASE_ID) {
   throw new Error('Missing NOTION_DATABASE_ID');
 }
 
+type PropertyType = PageObjectResponse['properties'][string];
+
 // Helper function to safely get text content from Notion properties
-function getTextContent(property: PropertyValueObject | undefined): string {
+function getTextContent(property: PropertyType | undefined): string {
   if (!property) return '';
   
-  if (property.type === 'title' && property.title?.[0]?.plain_text) {
-    return property.title[0].plain_text;
+  if (property.type === 'title') {
+    return property.title[0]?.plain_text || '';
   }
-  if (property.type === 'rich_text' && property.rich_text?.[0]?.plain_text) {
-    return property.rich_text[0].plain_text;
+  if (property.type === 'rich_text') {
+    return property.rich_text[0]?.plain_text || '';
   }
   return '';
 }
 
 // Helper function to get URL from file property
-function getFileUrl(property: PropertyValueObject | undefined): string {
+function getFileUrl(property: PropertyType | undefined): string {
   if (!property || property.type !== 'files') return '';
-  return property.files?.[0]?.file?.url || '';
+  const file = property.files[0];
+  if (!file) return '';
+  return 'file' in file ? file.file.url : file.external.url;
 }
 
 // Helper function to get URL from url property
-function getUrl(property: PropertyValueObject | undefined): string {
+function getUrl(property: PropertyType | undefined): string {
   if (!property || property.type !== 'url') return '';
   return property.url || '';
 }
 
 // Helper function to get multi-select values
-function getMultiSelect(property: PropertyValueObject | undefined): string[] {
+function getMultiSelect(property: PropertyType | undefined): string[] {
   if (!property || property.type !== 'multi_select') return [];
-  return property.multi_select?.map(item => item.name) || [];
+  return property.multi_select.map(item => item.name);
 }
 
 export const notion = new Client({
