@@ -58,7 +58,8 @@ export default function ContactPage() {
 
       setStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch (error) {
+    } catch (err) {
+      console.error('Failed to send message:', err);
       setStatus('error');
       setErrorMessage('Failed to send message. Please try again later.');
     }
@@ -179,7 +180,7 @@ export default function ContactPage() {
                 className="block text-sm font-medium mb-2"
                 style={{ color: 'var(--color-accent)' }}
               >
-                What's on Your Mind?
+                What&apos;s on Your Mind?
               </label>
               <select
                 id="subject"

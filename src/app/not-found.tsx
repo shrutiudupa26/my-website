@@ -23,7 +23,7 @@ export default function NotFound() {
             className="text-xl font-body mb-12 max-w-lg"
             style={{ color: 'var(--color-light)', opacity: 0.7 }}
           >
-            The page you're looking for doesn't exist or has been moved.
+            Looks like you&apos;ve ventured into uncharted territory! Let&apos;s get you back on track.
           </p>
           <Link 
             href="/"

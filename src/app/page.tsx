@@ -1,7 +1,6 @@
 import { getProfileData } from '@/lib/notion';
 import ActivityCarousel from '@/components/ActivityCarousel';
 import Image from 'next/image';
-import { Metadata } from 'next';
 
 export default async function Home() {
   try {
@@ -17,7 +16,7 @@ export default async function Home() {
               <div className="flex flex-col">
                 <div className="flex flex-col">
                   <p className="text-6xl md:text-7xl font-heading font-bold tracking-wider" style={{ color: 'var(--color-light)' }}>
-                    I'M
+                    I&apos;M
                   </p>
                   <h1 className="text-6xl md:text-7xl font-heading font-bold tracking-wider" style={{ color: 'var(--color-light)' }}>
                     {profile.name.toUpperCase()}.
@@ -70,8 +69,8 @@ export default async function Home() {
         </div>
       </div>
     );
-  } catch (error) {
-    console.error('Error loading profile:', error);
+  } catch (err) {
+    console.error('Error loading profile:', err);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-red-500">Failed to load profile data</p>

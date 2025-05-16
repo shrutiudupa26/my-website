@@ -1,5 +1,12 @@
 import { Client } from '@notionhq/client';
 import { BlogPost } from '@/types/blog';
+import { 
+  PageObjectResponse,
+  PartialPageObjectResponse,
+  DatabaseObjectResponse,
+  PartialDatabaseObjectResponse,
+  PropertyValueObject
+} from '@notionhq/client/build/src/api-endpoints';
 
 if (!process.env.NOTION_API_KEY) {
   throw new Error('Missing NOTION_API_KEY');
@@ -9,20 +16,36 @@ if (!process.env.NOTION_DATABASE_ID) {
   throw new Error('Missing NOTION_DATABASE_ID');
 }
 
-// Define Notion specific types
-type NotionProperty = {
-  title?: { plain_text: string }[];
-  rich_text?: { plain_text: string }[];
-  files?: { file: { url: string } }[];
-  multi_select?: { name: string }[];
-  url?: string;
-  select?: { name: string };
-};
+// Helper function to safely get text content from Notion properties
+function getTextContent(property: PropertyValueObject | undefined): string {
+  if (!property) return '';
+  
+  if (property.type === 'title' && property.title?.[0]?.plain_text) {
+    return property.title[0].plain_text;
+  }
+  if (property.type === 'rich_text' && property.rich_text?.[0]?.plain_text) {
+    return property.rich_text[0].plain_text;
+  }
+  return '';
+}
 
-type NotionPage = {
-  id: string;
-  properties: Record<string, NotionProperty>;
-};
+// Helper function to get URL from file property
+function getFileUrl(property: PropertyValueObject | undefined): string {
+  if (!property || property.type !== 'files') return '';
+  return property.files?.[0]?.file?.url || '';
+}
+
+// Helper function to get URL from url property
+function getUrl(property: PropertyValueObject | undefined): string {
+  if (!property || property.type !== 'url') return '';
+  return property.url || '';
+}
+
+// Helper function to get multi-select values
+function getMultiSelect(property: PropertyValueObject | undefined): string[] {
+  if (!property || property.type !== 'multi_select') return [];
+  return property.multi_select?.map(item => item.name) || [];
+}
 
 export const notion = new Client({
   auth: process.env.NOTION_API_KEY,
@@ -68,6 +91,12 @@ export interface BlogPostData {
   externalLink?: string;
 }
 
+type NotionResponse = PageObjectResponse | PartialPageObjectResponse | DatabaseObjectResponse | PartialDatabaseObjectResponse;
+
+function isFullPage(page: NotionResponse): page is PageObjectResponse {
+  return 'properties' in page;
+}
+
 export async function getProfileData(): Promise<ProfileData> {
   try {
     const response = await notion.databases.query({
@@ -80,35 +109,34 @@ export async function getProfileData(): Promise<ProfileData> {
       },
     });
 
-    const page = response.results[0] as NotionPage;
+    const page = response.results[0] as PageObjectResponse;
     if (!page) throw new Error('Profile data not found for PageType: MainProfile');
 
     const properties = page.properties;
     
-    // Safely access properties with fallbacks
-    const name = properties.Name?.title?.[0]?.plain_text || 'Your Name';
-    const title = properties.JobTitle?.rich_text?.[0]?.plain_text || 'Your Title';
-    const introduction = properties.IntroText?.rich_text?.[0]?.plain_text || 'Your introduction';
-    const profileImage = properties.ProfileImage?.files?.[0]?.file?.url || '/default-profile.jpg';
+    const name = getTextContent(properties.Name) || 'Your Name';
+    const title = getTextContent(properties.JobTitle) || 'Your Title';
+    const introduction = getTextContent(properties.IntroText) || 'Your introduction';
+    const profileImage = getFileUrl(properties.ProfileImage) || '/default-profile.jpg';
     
-    // Handle WhatsKeepingMeBusyLately with proper error checking
-    let currentWork = [];
+    const currentWork = [];
     try {
-      const busyText = properties.WhatsKeepingMeBusyLately?.rich_text?.[0]?.plain_text;
+      const busyText = getTextContent(properties.WhatsKeepingMeBusyLately);
       if (busyText) {
-        currentWork = busyText.split('\n').map((item: string) => {
+        busyText.split('\n').forEach(item => {
           const [date, ...activityParts] = item.split(' - ');
-          return {
+          currentWork.push({
             date: date?.trim() || 'No date',
             activity: activityParts.join(' - ').trim() || 'No activity'
-          };
+          });
         });
       }
     } catch (error) {
-      currentWork = [{
+      console.error('Error parsing current work:', error);
+      currentWork.push({
         date: 'Today',
         activity: 'Setting up the website'
-      }];
+      });
     }
 
     return {
@@ -142,17 +170,19 @@ export async function getExperiences(): Promise<ExperienceData[]> {
       ],
     });
 
-    const experiences = response.results.map((page: NotionPage) => {
-      const properties = page.properties;
-      return {
-        id: page.id,
-        workCompany: properties.WorkCompany?.rich_text?.[0]?.plain_text || 'N/A',
-        workTitle: properties.WorkTitle?.rich_text?.[0]?.plain_text || 'N/A',
-        workStartDate: properties.WorkStartDate?.rich_text?.[0]?.plain_text || 'N/A',
-        workEndDate: properties.WorkEndDate?.rich_text?.[0]?.plain_text || null,
-        workDescription: properties.WorkDescription?.rich_text?.[0]?.plain_text || 'No description provided.',
-      };
-    });
+    const experiences = response.results
+      .filter(isFullPage)
+      .map(page => {
+        const properties = page.properties;
+        return {
+          id: page.id,
+          workCompany: getTextContent(properties.WorkCompany) || 'N/A',
+          workTitle: getTextContent(properties.WorkTitle) || 'N/A',
+          workStartDate: getTextContent(properties.WorkStartDate) || 'N/A',
+          workEndDate: getTextContent(properties.WorkEndDate) || null,
+          workDescription: getTextContent(properties.WorkDescription) || 'No description provided.',
+        };
+      });
 
     return experiences.sort((a, b) => {
       if (a.workStartDate === 'N/A') return 1;
@@ -166,40 +196,35 @@ export async function getExperiences(): Promise<ExperienceData[]> {
 }
 
 export async function getProjects(): Promise<ProjectData[]> {
-  const response = await notion.databases.query({
-    database_id: process.env.NOTION_DATABASE_ID!,
-    filter: {
-      property: 'PageType',
-      select: {
-        equals: 'Projects',
+  try {
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_DATABASE_ID!,
+      filter: {
+        property: 'PageType',
+        select: {
+          equals: 'Projects',
+        },
       },
-    },
-  });
-  
-  // Disable console.log temporarily
-  const originalConsoleLog = console.log;
-  console.log = () => {};
-  
-  const projects = response.results.map((page: any, index: number) => {
-    const properties = page.properties;
+    });
 
-    const processedData: ProjectData = {
-      id: page.id,
-      title: properties.ProjectTitle?.rich_text?.[0]?.plain_text || 'N/A',
-      description: properties["Project Description"]?.rich_text?.[0]?.plain_text || 'No description provided.',
-      image: properties.ProjectImage?.files?.[0]?.file?.url || '',
-      technologies: properties.ProjectTechnologies?.multi_select?.map((tech: any) => tech.name) || [],
-      link: properties.ProjectLink?.url || '',
-      github: properties.ProjectGithub?.url || '',
-    };
-
-    return processedData;
-  });
-
-  // Restore console.log
-  console.log = originalConsoleLog;
-
-  return projects;
+    return response.results
+      .filter(isFullPage)
+      .map(page => {
+        const properties = page.properties;
+        return {
+          id: page.id,
+          title: getTextContent(properties.ProjectTitle) || 'N/A',
+          description: getTextContent(properties['Project Description']) || 'No description provided.',
+          image: getFileUrl(properties.ProjectImage) || '',
+          technologies: getMultiSelect(properties.ProjectTechnologies),
+          link: getUrl(properties.ProjectLink) || '',
+          github: getUrl(properties.ProjectGithub) || '',
+        };
+      });
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    throw error;
+  }
 }
 
 export async function getBlogPosts(): Promise<BlogPost[]> {
@@ -221,55 +246,34 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
     });
 
     return response.results
-      .map((page: any) => {
+      .filter(isFullPage)
+      .map(page => {
         const properties = page.properties;
-        
         try {
-          const title = properties["ArticleTitle"].rich_text[0].plain_text;
-          const url = properties["ArticleURL"].url;
+          const title = getTextContent(properties.ArticleTitle);
+          const url = getUrl(properties.ArticleURL);
+          
+          if (!title || !url) return null;
           
           return {
             title,
             url,
             platform: getPlatformFromUrl(url),
-          } as BlogPost;
+          };
         } catch (error) {
-          return {
-            title: 'Error loading post',
-            url: '#',
-            platform: 'medium'
-          } as BlogPost;
+          console.error('Error parsing blog post:', error);
+          return null;
         }
       })
-      .filter((post): post is BlogPost => Boolean(post.title) && post.url !== '#');
+      .filter((post): post is BlogPost => post !== null);
   } catch (error) {
+    console.error('Error fetching blog posts:', error);
     return [];
   }
 }
 
 function getPlatformFromUrl(url: string): 'medium' | 'linkedin' {
-  if (url.includes('medium.com')) {
-    return 'medium';
-  }
-  if (url.includes('linkedin.com')) {
-    return 'linkedin';
-  }
-  // Default to medium if unknown
+  if (url.includes('medium.com')) return 'medium';
+  if (url.includes('linkedin.com')) return 'linkedin';
   return 'medium';
-}
-
-// Replace any with proper types
-type NotionProperty = {
-  type: string;
-  [key: string]: unknown;
-};
-
-// Update function signatures to use the new type
-const extractProperty = (properties: Record<string, NotionProperty>, key: string): unknown => {
-  // ... existing code ...
-};
-
-// Update array mapping functions to use proper types
-properties.map((property: NotionProperty) => {
-  // ... existing code ...
-}); 
+} 

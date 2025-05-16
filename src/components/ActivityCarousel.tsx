@@ -25,9 +25,9 @@ const formatDate = (dateStr: string) => {
       month: 'long',
       year: 'numeric'
     });
-  } catch (error) {
-    // If there's any error in parsing, return the original string
-    return dateStr;
+  } catch (err) {
+    console.error('Error in ActivityCarousel:', err);
+    return null;
   }
 };
 
