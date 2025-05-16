@@ -1,6 +1,7 @@
 import { getProfileData } from '@/lib/notion';
 import Image from 'next/image';
 import ActivityCarousel from '@/components/ActivityCarousel';
+import { Metadata } from 'next';
 
 export default async function Home() {
   try {

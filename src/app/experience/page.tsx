@@ -1,4 +1,4 @@
-import { getExperiences, ExperienceData } from '@/lib/notion';
+import { getExperiences } from '@/lib/notion';
 import ExperienceTimeline from '@/components/ExperienceTimeline';
 
 export default async function ExperiencePage() {

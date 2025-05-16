@@ -104,17 +104,8 @@ export async function getProfileData(): Promise<ProfileData> {
       currentWork
     };
   } catch (error) {
-    // Return default data if there's an error
-    return {
-      name: 'Your Name',
-      title: 'Your Title',
-      introduction: 'Welcome to my website!',
-      profileImage: '/default-profile.jpg',
-      currentWork: [{
-        date: 'Today',
-        activity: 'Setting up the website'
-      }]
-    };
+    console.error('Error fetching Notion data:', error);
+    throw error;
   }
 }
 
@@ -256,4 +247,20 @@ function getPlatformFromUrl(url: string): 'medium' | 'linkedin' {
   }
   // Default to medium if unknown
   return 'medium';
-} 
+}
+
+// Replace any with proper types
+type NotionProperty = {
+  type: string;
+  [key: string]: unknown;
+};
+
+// Update function signatures to use the new type
+const extractProperty = (properties: Record<string, NotionProperty>, key: string): unknown => {
+  // ... existing code ...
+};
+
+// Update array mapping functions to use proper types
+properties.map((property: NotionProperty) => {
+  // ... existing code ...
+}); 

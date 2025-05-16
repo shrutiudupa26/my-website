@@ -30,10 +30,13 @@ export default function ContactPage() {
   // Rotate through subtitles every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSubtitleIndex((prev) => (prev + 1) % subtitles.length);
+      setCurrentSubtitleIndex((prevIndex) => 
+        prevIndex === subtitles.length - 1 ? 0 : prevIndex + 1
+      );
     }, 3000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [subtitles.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
