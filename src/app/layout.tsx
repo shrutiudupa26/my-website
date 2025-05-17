@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import PageTransition from "@/components/PageTransition";
 import { getProfileData } from "@/lib/notion";
 import FloatingElements from "@/components/FloatingElements";
+import { Analytics } from '@vercel/analytics/react';
 
 const sora = Sora({
   subsets: ["latin"],
@@ -63,6 +64,7 @@ export default async function RootLayout({
             </PageTransition>
           </main>
         </div>
+        <Analytics />
       </body>
     </html>
   );
