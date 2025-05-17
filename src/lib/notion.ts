@@ -1,5 +1,6 @@
 import { Client } from '@notionhq/client';
 import { BlogPost } from '@/types/blog';
+import { cacheImage } from './imageCache';
 import type { 
   PageObjectResponse,
   PartialPageObjectResponse,
@@ -120,7 +121,12 @@ export async function getProfileData(): Promise<ProfileData> {
     const name = getTextContent(properties.Name) || 'Your Name';
     const title = getTextContent(properties.JobTitle) || 'Your Title';
     const introduction = getTextContent(properties.IntroText) || 'Your introduction';
-    const profileImage = getFileUrl(properties.ProfileImage) || '/default-profile.jpg';
+    const notionProfileImage = getFileUrl(properties.ProfileImage);
+    
+    // Cache the profile image
+    const profileImage = notionProfileImage ? 
+      await cacheImage(notionProfileImage, `profile-${page.id}`) : 
+      '/default-profile.jpg';
     
     const currentWork = [];
     try {
@@ -210,20 +216,30 @@ export async function getProjects(): Promise<ProjectData[]> {
       },
     });
 
-    return response.results
-      .filter(isFullPage)
-      .map(page => {
-        const properties = page.properties;
-        return {
-          id: page.id,
-          title: getTextContent(properties.ProjectTitle) || 'N/A',
-          description: getTextContent(properties['Project Description']) || 'No description provided.',
-          image: getFileUrl(properties.ProjectImage) || '',
-          technologies: getMultiSelect(properties.ProjectTechnologies),
-          link: getUrl(properties.ProjectLink) || '',
-          github: getUrl(properties.ProjectGithub) || '',
-        };
-      });
+    const projects = await Promise.all(
+      response.results
+        .filter(isFullPage)
+        .map(async (page) => {
+          const properties = page.properties;
+          const projectLink = getUrl(properties.ProjectLink) || '';
+          const notionImageUrl = getFileUrl(properties.ProjectImage);
+          
+          // Cache the image and get its local path
+          const imageUrl = await cacheImage(notionImageUrl, page.id);
+
+          return {
+            id: page.id,
+            title: getTextContent(properties.ProjectTitle) || 'N/A',
+            description: getTextContent(properties['Project Description']) || 'No description provided.',
+            image: imageUrl,
+            technologies: getMultiSelect(properties.ProjectTechnologies),
+            link: projectLink,
+            github: projectLink,
+          };
+        })
+    );
+
+    return projects;
   } catch (error) {
     console.error('Error fetching projects:', error);
     throw error;
