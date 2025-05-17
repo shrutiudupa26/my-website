@@ -9,12 +9,6 @@ interface ProjectsGridProps {
 }
 
 const ProjectsGrid = ({ initialProjects }: ProjectsGridProps) => {
-  const [openModalId, setOpenModalId] = useState<string | null>(null);
-
-  const handleModalOpen = (projectId: string) => {
-    setOpenModalId(projectId); // This will close any other open modal
-  };
-
   return (
     <>
       {initialProjects.length > 0 ? (
@@ -24,10 +18,7 @@ const ProjectsGrid = ({ initialProjects }: ProjectsGridProps) => {
               key={project.id} 
               className="backdrop-blur-sm bg-primary-light/30 rounded-lg transition-all duration-300 hover:bg-primary-light/40"
             >
-              <ProjectCard 
-                project={project} 
-                onModalOpen={() => handleModalOpen(project.id)}
-              />
+              <ProjectCard project={project} />
             </div>
           ))}
         </div>
