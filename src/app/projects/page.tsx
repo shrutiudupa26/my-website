@@ -1,6 +1,11 @@
-import { getProjects } from '@/lib/notion';
-import ProjectCard from '@/components/ProjectCard';
 import { Metadata } from 'next';
+import dynamic from 'next/dynamic';
+import { getProjects } from '@/lib/notion';
+
+// Import the client component dynamically
+const ProjectsGrid = dynamic(() => import('@/components/ProjectsGrid'), {
+  ssr: true // Enable server-side rendering
+});
 
 export const metadata: Metadata = {
   title: 'Projects | My Portfolio',
@@ -19,25 +24,7 @@ export default async function ProjectsPage() {
         Projects
       </h1>
       
-      {projects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto px-4">
-          {projects.map((project) => (
-            <div 
-              key={project.id} 
-              className="backdrop-blur-sm bg-primary-light/30 rounded-lg transition-all duration-300 hover:bg-primary-light/40"
-            >
-              <ProjectCard project={project} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p 
-          className="text-center text-xl font-body"
-          style={{ color: 'var(--color-light)' }}
-        >
-          Projects coming soon...
-        </p>
-      )}
+      <ProjectsGrid initialProjects={projects} />
     </div>
   );
 } 
