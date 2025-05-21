@@ -1,15 +1,23 @@
-import { getProfileData } from '@/lib/notion';
+import { getProfileData, getExperiences, getProjects } from '@/lib/notion';
+import ExperienceTimeline from '@/components/ExperienceTimeline';
+import ProjectsGrid from '@/components/ProjectsGrid';
 import ActivityCarousel from '@/components/ActivityCarousel';
 import Image from 'next/image';
+import ContactSection from '@/components/ContactSection';
+import SkillsSection from '@/components/SkillsSection';
 
 export default async function Home() {
-  try {
-    const profile = await getProfileData();
+  const [profile, experiences, projects] = await Promise.all([
+    getProfileData(),
+    getExperiences(),
+    getProjects()
+  ]);
 
-    return (
-      <div className="relative min-h-screen">
-        {/* Hero Section */}
-        <div className="w-full max-w-6xl mx-auto px-4 pt-24 pb-16 md:py-24">
+  return (
+    <div className="space-y-32 py-20">
+      {/* Hero Section */}
+      <section id="home" className="min-h-screen flex items-center justify-center scroll-mt-24">
+        <div className="w-full max-w-6xl mx-auto px-4">
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 lg:gap-24 items-center">
             {/* Left Column - Introduction */}
             <div className="flex flex-col justify-center w-full">
@@ -29,7 +37,7 @@ export default async function Home() {
                 </div>
               </div>
             </div>
-            
+
             {/* Right Column - Image */}
             <div className="w-full flex justify-center md:justify-end items-stretch order-first md:order-last">
               {profile.profileImage ? (
@@ -50,27 +58,48 @@ export default async function Home() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Activities Carousel Section */}
-        <div className="w-full max-w-6xl mx-auto px-4 pb-16 md:pb-24">
-          <div className="md:max-w-[60%] lg:max-w-[50%]">
-            <h2 
-              className="text-xl sm:text-2xl md:text-3xl font-heading mb-6 md:mb-8 text-light/85"
-            >
-              What&apos;s keeping me busy lately?
-            </h2>
-            <ActivityCarousel activities={profile.currentWork} />
+          {/* Activities Carousel Section */}
+          <div className="mt-16 md:mt-24">
+            <div className="md:max-w-[60%] lg:max-w-[50%]">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-heading mb-6 md:mb-8 text-light/85">
+                What&apos;s keeping me busy lately?
+              </h2>
+              <ActivityCarousel activities={profile.currentWork} />
+            </div>
           </div>
         </div>
-      </div>
-    );
-  } catch (err) {
-    console.error('Error loading profile:', err);
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500">Failed to load profile data</p>
-      </div>
-    );
-  }
+      </section>
+
+      {/* Experience Section */}
+      <section id="experience" className="min-h-screen scroll-mt-24">
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-heading mb-12 md:mb-16 text-center" style={{ color: 'var(--color-accent)' }}>
+          Milestone Map
+        </h2>
+        {experiences.length > 0 ? (
+          <div className="backdrop-blur-sm bg-primary-light/20 rounded-lg p-6 max-w-4xl mx-auto text-justify">
+            <ExperienceTimeline experiences={experiences} />
+          </div>
+        ) : (
+          <p className="text-center text-xl font-body" style={{ color: 'var(--color-light)' }}>
+            Experience highlights coming soon...
+          </p>
+        )}
+      </section>
+
+      {/* Skills Section */}
+      <SkillsSection />
+
+      {/* Projects Section */}
+      <section id="projects" className="min-h-screen scroll-mt-24">
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-heading mb-12 md:mb-16 text-center" style={{ color: 'var(--color-accent)' }}>
+          Projects
+        </h2>
+        <ProjectsGrid initialProjects={projects} />
+      </section>
+
+      {/* Contact Section */}
+      <ContactSection contactText={profile.contactText} />
+    </div>
+  );
 } 

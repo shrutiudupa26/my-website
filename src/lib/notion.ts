@@ -64,6 +64,10 @@ export interface ProfileData {
     date: string;
     activity: string;
   }[];
+  bio?: string;
+  contactText?: string;
+  github?: string;
+  linkedin?: string;
 }
 
 export interface ExperienceData {
@@ -122,6 +126,10 @@ export async function getProfileData(): Promise<ProfileData> {
     const title = getTextContent(properties.JobTitle) || 'Your Title';
     const introduction = getTextContent(properties.IntroText) || 'Your introduction';
     const notionProfileImage = getFileUrl(properties.ProfileImage);
+    const bio = getTextContent(properties.Bio) || '';
+    const contactText = getTextContent(properties.ContactText) || '';
+    const github = getTextContent(properties.Github) || '';
+    const linkedin = getTextContent(properties.Linkedin) || '';
     
     // Cache the profile image
     const profileImage = notionProfileImage ? 
@@ -153,7 +161,11 @@ export async function getProfileData(): Promise<ProfileData> {
       title,
       introduction,
       profileImage,
-      currentWork
+      currentWork,
+      bio,
+      contactText,
+      github,
+      linkedin
     };
   } catch (error) {
     console.error('Error fetching profile data:', error);

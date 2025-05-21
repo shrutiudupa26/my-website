@@ -11,7 +11,7 @@ interface ExperienceTimelineProps {
 const formatDateRange = (startDate: string, endDate: string | null) => {
   if (startDate === 'N/A') return 'Date N/A'; // Handle N/A start date
   const start = new Date(startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-  if (!endDate || endDate === 'N/A') return `${start} - Present`;
+  if (!endDate || endDate === 'N/A' || endDate === 'Present') return `${start} - Present`;
   const end = new Date(endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   return `${start} - ${end}`;
 };

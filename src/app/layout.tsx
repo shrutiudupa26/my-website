@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Sora, Montserrat } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
-import PageTransition from "@/components/PageTransition";
 import { getProfileData } from "@/lib/notion";
 import FloatingElements from "@/components/FloatingElements";
 
@@ -30,6 +29,12 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={`${sora.variable} ${montserrat.variable}`}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css"
+        />
+      </head>
       <body className="bg-dark text-light" suppressHydrationWarning>
         {/* Background Layers */}
         <div className="fixed inset-0 -z-20">
@@ -58,9 +63,7 @@ export default async function RootLayout({
         <div className="relative z-10">
           <Navigation name={profile.name} />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <PageTransition>
-              {children}
-            </PageTransition>
+            {children}
           </main>
         </div>
       </body>
