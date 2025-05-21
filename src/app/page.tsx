@@ -6,6 +6,9 @@ import Image from 'next/image';
 import ContactSection from '@/components/ContactSection';
 import SkillsSection from '@/components/SkillsSection';
 
+// Enable revalidation every 60 seconds
+export const revalidate = 60;
+
 export default async function Home() {
   const [profile, experiences, projects] = await Promise.all([
     getProfileData(),

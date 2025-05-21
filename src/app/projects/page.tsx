@@ -7,6 +7,9 @@ const ProjectsGrid = dynamic(() => import('@/components/ProjectsGrid'), {
   ssr: true // Enable server-side rendering
 });
 
+// Enable revalidation every 60 seconds
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Projects | My Portfolio',
   description: 'Explore my projects and development work',
