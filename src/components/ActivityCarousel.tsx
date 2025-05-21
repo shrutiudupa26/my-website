@@ -14,7 +14,10 @@ interface ActivityCarouselProps {
 
 const formatDate = (dateStr: string) => {
   try {
-    const date = new Date(dateStr);
+    // Parse the date and adjust for timezone
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    
     if (isNaN(date.getTime())) {
       // If the date is not in a standard format, return the original string
       return dateStr;
@@ -27,7 +30,7 @@ const formatDate = (dateStr: string) => {
     });
   } catch (err) {
     console.error('Error in ActivityCarousel:', err);
-    return null;
+    return dateStr;
   }
 };
 
