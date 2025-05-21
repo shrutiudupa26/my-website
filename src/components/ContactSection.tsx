@@ -3,11 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-interface ContactSectionProps {
-  contactText?: string;
-}
-
-export default function ContactSection({ contactText }: ContactSectionProps) {
+export default function ContactSection() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',

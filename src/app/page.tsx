@@ -99,7 +99,7 @@ export default async function Home() {
       </section>
 
       {/* Contact Section */}
-      <ContactSection contactText={profile.contactText} />
+      <ContactSection />
     </div>
   );
 } 
